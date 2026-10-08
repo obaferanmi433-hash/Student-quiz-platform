@@ -189,7 +189,7 @@
 
 <script type="module">
 
-import { auth, db } from "./firebase.js";
+import { db } from "./firebase.js";
 
 import {
     doc,
@@ -198,32 +198,49 @@ import {
 
 
 // ======================================
-// GET QUIZ ID FROM URL
+// GET QUIZ ID
 // ======================================
 
-const urlParams = new URLSearchParams(window.location.search);
+const urlParams =
+    new URLSearchParams(window.location.search);
 
-const quizId = urlParams.get("id");
+const quizId =
+    urlParams.get("id");
 
 
 // ======================================
 // PAGE ELEMENTS
 // ======================================
 
-const quizTitle = document.getElementById("quizTitle");
-const timerElement = document.getElementById("timer");
+const quizTitle =
+    document.getElementById("quizTitle");
 
-const currentElement = document.getElementById("current");
-const totalElement = document.getElementById("total");
+const timerElement =
+    document.getElementById("timer");
 
-const numberElement = document.getElementById("number");
-const questionElement = document.getElementById("question");
+const currentElement =
+    document.getElementById("current");
 
-const optionsElement = document.getElementById("options");
+const totalElement =
+    document.getElementById("total");
 
-const previousBtn = document.getElementById("previousBtn");
-const nextBtn = document.getElementById("nextBtn");
-const submitBtn = document.getElementById("submitBtn");
+const numberElement =
+    document.getElementById("number");
+
+const questionElement =
+    document.getElementById("question");
+
+const optionsElement =
+    document.getElementById("options");
+
+const previousBtn =
+    document.getElementById("previousBtn");
+
+const nextBtn =
+    document.getElementById("nextBtn");
+
+const submitBtn =
+    document.getElementById("submitBtn");
 
 
 // ======================================
@@ -231,6 +248,7 @@ const submitBtn = document.getElementById("submitBtn");
 // ======================================
 
 let quiz = null;
+
 let questions = [];
 
 let currentQuestion = 0;
@@ -238,11 +256,12 @@ let currentQuestion = 0;
 let userAnswers = [];
 
 let time = 0;
+
 let timer;
 
 
 // ======================================
-// LOAD QUIZ FROM FIREBASE
+// LOAD QUIZ
 // ======================================
 
 async function loadQuiz() {
@@ -257,18 +276,19 @@ async function loadQuiz() {
         return;
     }
 
-
     try {
 
-        const quizReference = doc(
-            db,
-            "quizzes",
-            quizId
-        );
+        const quizReference =
+            doc(
+                db,
+                "quizzes",
+                quizId
+            );
 
-        const quizSnapshot = await getDoc(
-            quizReference
-        );
+        const quizSnapshot =
+            await getDoc(
+                quizReference
+            );
 
 
         if (!quizSnapshot.exists()) {
@@ -282,22 +302,26 @@ async function loadQuiz() {
         }
 
 
-        quiz = quizSnapshot.data();
+        quiz =
+            quizSnapshot.data();
 
 
-        // Get quiz title
+        // Quiz title
+
         quizTitle.textContent =
             quiz.title || "Quiz";
 
 
-        // Get questions
+        // ==================================
+        // GET QUESTIONS
+        // ==================================
+
         questions =
             Array.isArray(quiz.questions)
             ? quiz.questions
             : [];
 
 
-        // No questions yet
         if (questions.length === 0) {
 
             showMessage(
@@ -309,25 +333,32 @@ async function loadQuiz() {
         }
 
 
-        // Display total questions
+        // ==================================
+        // START TIMER
+        // ==================================
+
         totalElement.textContent =
             questions.length;
 
 
-        // Start timer
         const duration =
             Number(quiz.duration) || 20;
 
-        time = duration * 60;
+
+        time =
+            duration * 60;
+
 
         startTimer();
 
 
-        // Display first question
+        // ==================================
+        // SHOW FIRST QUESTION
+        // ==================================
+
         loadQuestion();
 
     }
-
 
     catch (error) {
 
@@ -335,6 +366,7 @@ async function loadQuiz() {
             "Error loading quiz:",
             error
         );
+
 
         showMessage(
             "Unable to load quiz",
@@ -350,9 +382,14 @@ async function loadQuiz() {
 // DISPLAY MESSAGE
 // ======================================
 
-function showMessage(title, message) {
+function showMessage(
+    title,
+    message
+) {
 
-    document.querySelector(".question-box").innerHTML = `
+    document.querySelector(
+        ".question-box"
+    ).innerHTML = `
 
         <div class="message">
 
@@ -382,28 +419,47 @@ function loadQuestion() {
     currentElement.textContent =
         currentQuestion + 1;
 
+
     numberElement.textContent =
         currentQuestion + 1;
 
+
+    // ==================================
+    // QUESTION TEXT
+    // ==================================
 
     questionElement.textContent =
         q.question || "Question";
 
 
+    // ==================================
+    // OPTIONS
+    // ==================================
+
     optionsElement.innerHTML = "";
 
 
-    const options =
-        Array.isArray(q.options)
-        ? q.options
-        : [];
+    const options = [
+
+        q.optionA,
+
+        q.optionB,
+
+        q.optionC,
+
+        q.optionD
+
+    ];
 
 
     options.forEach(
         (option, index) => {
 
             const label =
-                document.createElement("label");
+                document.createElement(
+                    "label"
+                );
+
 
             label.className =
                 "option";
@@ -415,13 +471,19 @@ function loadQuestion() {
                     type="radio"
                     name="answer"
                     value="${index}"
-                    ${userAnswers[currentQuestion] === index
-                    ? "checked"
-                    : ""}
+                    ${
+                        userAnswers[
+                            currentQuestion
+                        ] === index
+                        ? "checked"
+                        : ""
+                    }
                 >
 
-                ${String.fromCharCode(65 + index)}.
-                ${option}
+                ${String.fromCharCode(
+                    65 + index
+                )}.
+                ${option || ""}
 
             `;
 
@@ -434,9 +496,17 @@ function loadQuestion() {
     );
 
 
+    // ==================================
+    // PREVIOUS BUTTON
+    // ==================================
+
     previousBtn.disabled =
         currentQuestion === 0;
 
+
+    // ==================================
+    // NEXT / SUBMIT
+    // ==================================
 
     if (
         currentQuestion ===
@@ -478,8 +548,12 @@ function saveAnswer() {
 
     if (selected) {
 
-        userAnswers[currentQuestion] =
-            Number(selected.value);
+        userAnswers[
+            currentQuestion
+        ] =
+            Number(
+                selected.value
+            );
 
     }
 
@@ -487,7 +561,7 @@ function saveAnswer() {
 
 
 // ======================================
-// NEXT QUESTION
+// NEXT
 // ======================================
 
 nextBtn.addEventListener(
@@ -513,7 +587,7 @@ nextBtn.addEventListener(
 
 
 // ======================================
-// PREVIOUS QUESTION
+// PREVIOUS
 // ======================================
 
 previousBtn.addEventListener(
@@ -523,7 +597,9 @@ previousBtn.addEventListener(
         saveAnswer();
 
 
-        if (currentQuestion > 0) {
+        if (
+            currentQuestion > 0
+        ) {
 
             currentQuestion--;
 
@@ -536,7 +612,7 @@ previousBtn.addEventListener(
 
 
 // ======================================
-// SUBMIT QUIZ
+// SUBMIT
 // ======================================
 
 function submitQuiz() {
@@ -550,9 +626,28 @@ function submitQuiz() {
     questions.forEach(
         (question, index) => {
 
+            const correctAnswer =
+                String(
+                    question.answer || ""
+                )
+                .trim()
+                .toUpperCase();
+
+
+            const correctIndex =
+                {
+                    A: 0,
+                    B: 1,
+                    C: 2,
+                    D: 3
+                }[
+                    correctAnswer
+                ];
+
+
             if (
                 userAnswers[index] ===
-                question.answer
+                correctIndex
             ) {
 
                 score++;
@@ -602,26 +697,28 @@ function startTimer() {
     updateTimer();
 
 
-    timer = setInterval(
-        function() {
+    timer =
+        setInterval(
+            function() {
 
-            time--;
+                time--;
+
+                updateTimer();
 
 
-            updateTimer();
+                if (time <= 0) {
 
+                    clearInterval(
+                        timer
+                    );
 
-            if (time <= 0) {
+                    submitQuiz();
 
-                clearInterval(timer);
+                }
 
-                submitQuiz();
-
-            }
-
-        },
-        1000
-    );
+            },
+            1000
+        );
 
 }
 
@@ -629,7 +726,10 @@ function startTimer() {
 function updateTimer() {
 
     const minutes =
-        Math.floor(time / 60);
+        Math.floor(
+            time / 60
+        );
+
 
     const seconds =
         time % 60;
@@ -657,11 +757,13 @@ let lastViolationTime = 0;
 
 function recordViolation(reason) {
 
-    const now = Date.now();
+    const now =
+        Date.now();
 
 
     if (
-        now - lastViolationTime <
+        now -
+        lastViolationTime <
         2000
     ) {
 
@@ -670,7 +772,9 @@ function recordViolation(reason) {
     }
 
 
-    lastViolationTime = now;
+    lastViolationTime =
+        now;
+
 
     violations++;
 
@@ -710,6 +814,7 @@ function recordViolation(reason) {
 
 
 // Tab switching
+
 document.addEventListener(
     "visibilitychange",
     function() {
@@ -727,6 +832,7 @@ document.addEventListener(
 
 
 // Browser focus
+
 window.addEventListener(
     "blur",
     function() {
@@ -740,6 +846,7 @@ window.addEventListener(
 
 
 // Browser back button
+
 history.pushState(
     null,
     "",
@@ -766,7 +873,8 @@ window.addEventListener(
 );
 
 
-// Refresh/close warning
+// Refresh / close warning
+
 window.addEventListener(
     "beforeunload",
     function(event) {

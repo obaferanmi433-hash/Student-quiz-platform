@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Add Question</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #1e3a8a;
+        }
+
+        .quiz-info {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 7px;
+            font-weight: bold;
+        }
+
+        textarea,
+        input,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 7px;
+            font-size: 15px;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 25px;
+            padding: 14px;
+            border: none;
+            border-radius: 7px;
+            background: #2563eb;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        #message {
+            margin-top: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Add Question</h1>
+
+    <div class="quiz-info">
+        Quiz ID: <span id="quizId">Loading...</span>
+    </div>
+
+    <label>Question</label>
+    <textarea id="question"
+        placeholder="Enter your question here"></textarea>
+
+    <label>Option A</label>
+    <input type="text" id="optionA" placeholder="Enter option A">
+
+    <label>Option B</label>
+    <input type="text" id="optionB" placeholder="Enter option B">
+
+    <label>Option C</label>
+    <input type="text" id="optionC" placeholder="Enter option C">
+
+    <label>Option D</label>
+    <input type="text" id="optionD" placeholder="Enter option D">
+
+    <label>Correct Answer</label>
+    <select id="correctAnswer">
+        <option value="">Select correct answer</option>
+        <option value="A">A</option>
+        <option value="B">B</option>
+        <option value="C">C</option>
+        <option value="D">D</option>
+    </select>
+
+    <button onclick="addQuestion()">Add Question</button>
+
+    <div id="message"></div>
+
+</div>
+
+<script type="module">
+
+    import { initializeApp }
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+    import {
+        getFirestore,
+        collection,
+        addDoc,
+        serverTimestamp
+    }
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+
+    // YOUR FIREBASE CONFIG
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_AUTH_DOMAIN",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_STORAGE_BUCKET",
+        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+        appId: "YOUR_APP_ID"
+    };
+
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+
+    // Get quiz ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const quizId = urlParams.get("quizId");
+
+    document.getElementById("quizId").textContent =
+        quizId || "No quiz selected";
+
+
+    window.addQuestion = async function () {
+
+        const question =
+            document.getElementById("question").value.trim();
+
+        const optionA =
+            document.getElementById("optionA").value.trim();
+
+        const optionB =
+            document.getElementById("optionB").value.trim();
+
+        const optionC =
+            document.getElementById("optionC").value.trim();
+
+        const optionD =
+            document.getElementById("optionD").value.trim();
+
+        const correctAnswer =
+            document.getElementById("correctAnswer").value;
+
+
+        if (!quizId) {
+            showMessage("Quiz ID is missing.", "red");
+            return;
+        }
+
+
+        if (
+            !question ||
+            !optionA ||
+            !optionB ||
+            !optionC ||
+            !optionD ||
+            !correctAnswer
+        ) {
+            showMessage(
+                "Please fill in all fields.",
+                "red"
+            );
+            return;
+        }
+
+
+        try {
+
+            await addDoc(
+                collection(
+                    db,
+                    "quizzes",
+                    quizId,
+                    "questions"
+                ),
+                {
+                    question: question,
+
+                    options: {
+                        A: optionA,
+                        B: optionB,
+                        C: optionC,
+                        D: optionD
+                    },
+
+                    correctAnswer: correctAnswer,
+
+                    createdAt: serverTimestamp()
+                }
+            );
+
+
+            showMessage(
+                "Question added successfully! ✅",
+                "green"
+            );
+
+
+            document.getElementById("question").value = "";
+            document.getElementById("optionA").value = "";
+            document.getElementById("optionB").value = "";
+            document.getElementById("optionC").value = "";
+            document.getElementById("optionD").value = "";
+            document.getElementById("correctAnswer").value = "";
+
+        } catch (error) {
+
+            console.error(error);
+
+            showMessage(
+                "Error adding question: " + error.message,
+                "red"
+            );
+        }
+    };
+
+
+    function showMessage(message, color) {
+
+        const element =
+            document.getElementById("message");
+
+        element.textContent = message;
+        element.style.color = color;
+    }
+
+</script>
+
+</body>
+</html>

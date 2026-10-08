@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Mathematics CBT</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #222;
+        }
+
+        header {
+            background: #2563eb;
+            color: white;
+            padding: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .timer {
+            background: white;
+            color: #2563eb;
+            padding: 8px 12px;
+            border-radius: 7px;
+            font-weight: bold;
+        }
+
+        .container {
+            width: 94%;
+            max-width: 800px;
+            margin: 25px auto;
+        }
+
+        .progress {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .question-box {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        }
+
+        .question-number {
+            color: #2563eb;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .question {
+            font-size: 19px;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .option {
+            display: block;
+            padding: 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+
+        .option:hover {
+            background: #f0f5ff;
+        }
+
+        .option input {
+            margin-right: 10px;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+            gap: 10px;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .previous {
+            background: #ddd;
+        }
+
+        .next {
+            background: #2563eb;
+            color: white;
+        }
+
+        .submit {
+            background: #16a34a;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+
+    <h1>Mathematics CBT</h1>
+
+    <div class="timer" id="timer">
+        20:00
+    </div>
+
+</header>
+
+<main class="container">
+
+    <div class="progress">
+        Question <span id="current">1</span> of 5
+    </div>
+
+    <div class="question-box">
+
+        <div class="question-number">
+            Question <span id="number">1</span>
+        </div>
+
+        <div class="question" id="question">
+            Loading question...
+        </div>
+
+        <div id="options"></div>
+
+        <div class="buttons">
+
+            <button class="previous" onclick="previousQuestion()">
+                Previous
+            </button>
+
+            <button class="next" id="nextBtn" onclick="nextQuestion()">
+                Next
+            </button>
+
+            <button
+                class="submit"
+                id="submitBtn"
+                onclick="submitQuiz()"
+                style="display:none;">
+                Submit
+            </button>
+
+        </div>
+
+    </div>
+
+</main>
+
+<script>
+
+const questions = [
+
+    {
+        question: "What is 15 + 27?",
+        options: ["32", "40", "42", "45"],
+        answer: 2
+    },
+
+    {
+        question: "Simplify: 5 × 6",
+        options: ["11", "25", "30", "35"],
+        answer: 2
+    },
+
+    {
+        question: "What is 20% of 150?",
+        options: ["20", "25", "30", "35"],
+        answer: 2
+    },
+
+    {
+        question: "Solve: x + 7 = 15",
+        options: ["6", "7", "8", "9"],
+        answer: 2
+    },
+
+    {
+        question: "What is 9²?",
+        options: ["18", "72", "81", "90"],
+        answer: 2
+    }
+
+];
+
+let currentQuestion = 0;
+let userAnswers = [];
+
+function loadQuestion() {
+
+    const q = questions[currentQuestion];
+
+    document.getElementById("number").textContent =
+        currentQuestion + 1;
+
+    document.getElementById("current").textContent =
+        currentQuestion + 1;
+
+    document.getElementById("question").textContent =
+        q.question;
+
+    const optionsDiv = document.getElementById("options");
+
+    optionsDiv.innerHTML = "";
+
+    q.options.forEach((option, index) => {
+
+        const label = document.createElement("label");
+
+        label.className = "option";
+
+        label.innerHTML = `
+            <input
+                type="radio"
+                name="answer"
+                value="${index}"
+                ${userAnswers[currentQuestion] === index ? "checked" : ""}
+            >
+            ${String.fromCharCode(65 + index)}. ${option}
+        `;
+
+        optionsDiv.appendChild(label);
+
+    });
+
+    document.getElementById("nextBtn").style.display =
+        currentQuestion === questions.length - 1
+        ? "none"
+        : "block";
+
+    document.getElementById("submitBtn").style.display =
+        currentQuestion === questions.length - 1
+        ? "block"
+        : "none";
+}
+
+
+function saveAnswer() {
+
+    const selected = document.querySelector(
+        'input[name="answer"]:checked'
+    );
+
+    if (selected) {
+        userAnswers[currentQuestion] =
+            Number(selected.value);
+    }
+}
+
+
+function nextQuestion() {
+
+    saveAnswer();
+
+    if (currentQuestion < questions.length - 1) {
+
+        currentQuestion++;
+
+        loadQuestion();
+
+    }
+}
+
+
+function previousQuestion() {
+
+    saveAnswer();
+
+    if (currentQuestion > 0) {
+
+        currentQuestion--;
+
+        loadQuestion();
+
+    }
+}
+
+
+function submitQuiz() {
+
+    saveAnswer();
+
+    let score = 0;
+
+    questions.forEach((question, index) => {
+
+        if (userAnswers[index] === question.answer) {
+            score++;
+        }
+
+    });
+
+    localStorage.setItem("quizScore", score);
+    localStorage.setItem("totalQuestions", questions.length);
+
+    window.location.href = "result.html";
+}
+
+
+// TIMER
+
+let time = 20 * 60;
+
+const timer = setInterval(() => {
+
+    let minutes = Math.floor(time / 60);
+    let seconds = time % 60;
+
+    document.getElementById("timer").textContent =
+        `${minutes}:${seconds.toString().padStart(2, "0")}`;
+
+    if (time <= 0) {
+
+        clearInterval(timer);
+
+        submitQuiz();
+
+    }
+
+    time--;
+
+}, 1000);
+
+
+loadQuestion(// ==============================
+// BASIC ANTI-CHEAT SYSTEM
+// ==============================
+
+let violations = 0;
+const MAX_VIOLATIONS = 3;
+
+let lastViolationTime = 0;
+
+function recordViolation(reason) {
+
+    const now = Date.now();
+
+    // Prevent one action from being counted twice
+    if (now - lastViolationTime < 2000) {
+        return;
+    }
+
+    lastViolationTime = now;
+
+    violations++;
+
+    alert(
+        "⚠️ WARNING\n\n" +
+        reason +
+        "\n\nViolation " +
+        violations +
+        " of " +
+        MAX_VIOLATIONS
+    );
+
+    if (violations >= MAX_VIOLATIONS) {
+
+        alert(
+            "Quiz automatically submitted because the maximum number of violations was reached."
+        );
+
+        submitQuiz();
+    }
+}
+
+
+// Detect leaving the quiz tab
+document.addEventListener("visibilitychange", function() {
+
+    if (document.hidden) {
+
+        recordViolation(
+            "You left the quiz page or switched to another tab."
+        );
+    }
+
+});
+
+
+// Detect losing browser focus
+window.addEventListener("blur", function() {
+
+    recordViolation(
+        "The quiz window lost focus."
+    );
+
+});
+
+
+// Prevent browser back navigation
+history.pushState(null, "", location.href);
+
+window.addEventListener("popstate", function() {
+
+    history.pushState(null, "", location.href);
+
+    recordViolation(
+        "Attempt to leave the quiz was detected."
+    );
+
+});
+
+
+// Warn before refreshing or closing
+window.addEventListener("beforeunload", function(event) {
+
+    event.preventDefault();
+    event.returnValue = "";
+
+}););
+
+</script>
+
+</body>
+</html>

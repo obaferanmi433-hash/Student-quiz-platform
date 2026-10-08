@@ -131,143 +131,143 @@
 
 <script type="module">
 
-    import { initializeApp }
-    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
 
-    import {
-        getFirestore,
-        collection,
-        addDoc,
-        serverTimestamp
+import {
+    getFirestore,
+    collection,
+    addDoc,
+    serverTimestamp
+}
+from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+
+
+const firebaseConfig = {
+    apiKey: "AIzaSyCGB35tyDPYhkrbzB76CvQB2BE0GpAR3w8",
+    authDomain: "quizhub-4c410.firebaseapp.com",
+    projectId: "quizhub-4c410",
+    storageBucket: "quizhub-4c410.firebasestorage.app",
+    messagingSenderId: "674422240506",
+    appId: "1:674422240506:web:4e36f2427dd55f66e38543"
+};
+
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+
+// Get quiz ID from the URL
+const urlParams = new URLSearchParams(window.location.search);
+const quizId = urlParams.get("quizId");
+
+document.getElementById("quizId").textContent =
+    quizId || "No quiz selected";
+
+
+window.addQuestion = async function () {
+
+    const question =
+        document.getElementById("question").value.trim();
+
+    const optionA =
+        document.getElementById("optionA").value.trim();
+
+    const optionB =
+        document.getElementById("optionB").value.trim();
+
+    const optionC =
+        document.getElementById("optionC").value.trim();
+
+    const optionD =
+        document.getElementById("optionD").value.trim();
+
+    const correctAnswer =
+        document.getElementById("correctAnswer").value;
+
+
+    if (!quizId) {
+        showMessage("Quiz ID is missing.", "red");
+        return;
     }
-    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 
-    // YOUR FIREBASE CONFIG
-    const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_AUTH_DOMAIN",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_STORAGE_BUCKET",
-        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-        appId: "YOUR_APP_ID"
-    };
-
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-
-    // Get quiz ID from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const quizId = urlParams.get("quizId");
-
-    document.getElementById("quizId").textContent =
-        quizId || "No quiz selected";
-
-
-    window.addQuestion = async function () {
-
-        const question =
-            document.getElementById("question").value.trim();
-
-        const optionA =
-            document.getElementById("optionA").value.trim();
-
-        const optionB =
-            document.getElementById("optionB").value.trim();
-
-        const optionC =
-            document.getElementById("optionC").value.trim();
-
-        const optionD =
-            document.getElementById("optionD").value.trim();
-
-        const correctAnswer =
-            document.getElementById("correctAnswer").value;
-
-
-        if (!quizId) {
-            showMessage("Quiz ID is missing.", "red");
-            return;
-        }
-
-
-        if (
-            !question ||
-            !optionA ||
-            !optionB ||
-            !optionC ||
-            !optionD ||
-            !correctAnswer
-        ) {
-            showMessage(
-                "Please fill in all fields.",
-                "red"
-            );
-            return;
-        }
-
-
-        try {
-
-            await addDoc(
-                collection(
-                    db,
-                    "quizzes",
-                    quizId,
-                    "questions"
-                ),
-                {
-                    question: question,
-
-                    options: {
-                        A: optionA,
-                        B: optionB,
-                        C: optionC,
-                        D: optionD
-                    },
-
-                    correctAnswer: correctAnswer,
-
-                    createdAt: serverTimestamp()
-                }
-            );
-
-
-            showMessage(
-                "Question added successfully! ✅",
-                "green"
-            );
-
-
-            document.getElementById("question").value = "";
-            document.getElementById("optionA").value = "";
-            document.getElementById("optionB").value = "";
-            document.getElementById("optionC").value = "";
-            document.getElementById("optionD").value = "";
-            document.getElementById("correctAnswer").value = "";
-
-        } catch (error) {
-
-            console.error(error);
-
-            showMessage(
-                "Error adding question: " + error.message,
-                "red"
-            );
-        }
-    };
-
-
-    function showMessage(message, color) {
-
-        const element =
-            document.getElementById("message");
-
-        element.textContent = message;
-        element.style.color = color;
+    if (
+        !question ||
+        !optionA ||
+        !optionB ||
+        !optionC ||
+        !optionD ||
+        !correctAnswer
+    ) {
+        showMessage("Please fill in all fields.", "red");
+        return;
     }
+
+
+    try {
+
+        await addDoc(
+            collection(
+                db,
+                "quizzes",
+                quizId,
+                "questions"
+            ),
+            {
+                question: question,
+
+                options: {
+                    A: optionA,
+                    B: optionB,
+                    C: optionC,
+                    D: optionD
+                },
+
+                correctAnswer: correctAnswer,
+
+                createdAt: serverTimestamp()
+            }
+        );
+
+
+        showMessage(
+            "Question added successfully! ✅",
+            "green"
+        );
+
+
+        document.getElementById("question").value = "";
+        document.getElementById("optionA").value = "";
+        document.getElementById("optionB").value = "";
+        document.getElementById("optionC").value = "";
+        document.getElementById("optionD").value = "";
+        document.getElementById("correctAnswer").value = "";
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        showMessage(
+            "Error adding question: " + error.message,
+            "red"
+        );
+
+    }
+
+};
+
+
+function showMessage(message, color) {
+
+    const element =
+        document.getElementById("message");
+
+    element.textContent = message;
+    element.style.color = color;
+
+}
 
 </script>
 

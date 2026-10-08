@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Mathematics CBT</title>
+    <title>Quiz</title>
 
     <style>
         * {
@@ -26,6 +26,11 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 15px;
+        }
+
+        header h1 {
+            font-size: 20px;
         }
 
         .timer {
@@ -113,6 +118,13 @@
             background: #16a34a;
             color: white;
         }
+
+        .message {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+        }
     </style>
 </head>
 
@@ -120,10 +132,10 @@
 
 <header>
 
-    <h1>Mathematics CBT</h1>
+    <h1 id="quizTitle">Loading quiz...</h1>
 
     <div class="timer" id="timer">
-        20:00
+        --:--
     </div>
 
 </header>
@@ -131,13 +143,14 @@
 <main class="container">
 
     <div class="progress">
-        Question <span id="current">1</span> of 5
+        Question <span id="current">-</span>
+        of <span id="total">-</span>
     </div>
 
     <div class="question-box">
 
         <div class="question-number">
-            Question <span id="number">1</span>
+            Question <span id="number">-</span>
         </div>
 
         <div class="question" id="question">
@@ -148,18 +161,21 @@
 
         <div class="buttons">
 
-            <button class="previous" onclick="previousQuestion()">
+            <button
+                class="previous"
+                id="previousBtn">
                 Previous
             </button>
 
-            <button class="next" id="nextBtn" onclick="nextQuestion()">
+            <button
+                class="next"
+                id="nextBtn">
                 Next
             </button>
 
             <button
                 class="submit"
                 id="submitBtn"
-                onclick="submitQuiz()"
                 style="display:none;">
                 Submit
             </button>
@@ -170,267 +186,604 @@
 
 </main>
 
-<script>
 
-const questions = [
+<script type="module">
 
-    {
-        question: "What is 15 + 27?",
-        options: ["32", "40", "42", "45"],
-        answer: 2
-    },
+import { auth, db } from "./firebase.js";
 
-    {
-        question: "Simplify: 5 × 6",
-        options: ["11", "25", "30", "35"],
-        answer: 2
-    },
+import {
+    doc,
+    getDoc
+} from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
-    {
-        question: "What is 20% of 150?",
-        options: ["20", "25", "30", "35"],
-        answer: 2
-    },
 
-    {
-        question: "Solve: x + 7 = 15",
-        options: ["6", "7", "8", "9"],
-        answer: 2
-    },
+// ======================================
+// GET QUIZ ID FROM URL
+// ======================================
 
-    {
-        question: "What is 9²?",
-        options: ["18", "72", "81", "90"],
-        answer: 2
-    }
+const urlParams = new URLSearchParams(window.location.search);
 
-];
+const quizId = urlParams.get("id");
+
+
+// ======================================
+// PAGE ELEMENTS
+// ======================================
+
+const quizTitle = document.getElementById("quizTitle");
+const timerElement = document.getElementById("timer");
+
+const currentElement = document.getElementById("current");
+const totalElement = document.getElementById("total");
+
+const numberElement = document.getElementById("number");
+const questionElement = document.getElementById("question");
+
+const optionsElement = document.getElementById("options");
+
+const previousBtn = document.getElementById("previousBtn");
+const nextBtn = document.getElementById("nextBtn");
+const submitBtn = document.getElementById("submitBtn");
+
+
+// ======================================
+// QUIZ VARIABLES
+// ======================================
+
+let quiz = null;
+let questions = [];
 
 let currentQuestion = 0;
+
 let userAnswers = [];
+
+let time = 0;
+let timer;
+
+
+// ======================================
+// LOAD QUIZ FROM FIREBASE
+// ======================================
+
+async function loadQuiz() {
+
+    if (!quizId) {
+
+        showMessage(
+            "Quiz not found",
+            "No quiz ID was provided."
+        );
+
+        return;
+    }
+
+
+    try {
+
+        const quizReference = doc(
+            db,
+            "quizzes",
+            quizId
+        );
+
+        const quizSnapshot = await getDoc(
+            quizReference
+        );
+
+
+        if (!quizSnapshot.exists()) {
+
+            showMessage(
+                "Quiz not found",
+                "This quiz does not exist."
+            );
+
+            return;
+        }
+
+
+        quiz = quizSnapshot.data();
+
+
+        // Get quiz title
+        quizTitle.textContent =
+            quiz.title || "Quiz";
+
+
+        // Get questions
+        questions =
+            Array.isArray(quiz.questions)
+            ? quiz.questions
+            : [];
+
+
+        // No questions yet
+        if (questions.length === 0) {
+
+            showMessage(
+                "Quiz not ready",
+                "This quiz does not have any questions yet."
+            );
+
+            return;
+        }
+
+
+        // Display total questions
+        totalElement.textContent =
+            questions.length;
+
+
+        // Start timer
+        const duration =
+            Number(quiz.duration) || 20;
+
+        time = duration * 60;
+
+        startTimer();
+
+
+        // Display first question
+        loadQuestion();
+
+    }
+
+
+    catch (error) {
+
+        console.error(
+            "Error loading quiz:",
+            error
+        );
+
+        showMessage(
+            "Unable to load quiz",
+            "Please try again later."
+        );
+
+    }
+
+}
+
+
+// ======================================
+// DISPLAY MESSAGE
+// ======================================
+
+function showMessage(title, message) {
+
+    document.querySelector(".question-box").innerHTML = `
+
+        <div class="message">
+
+            <h2>${title}</h2>
+
+            <p style="margin-top:10px;">
+                ${message}
+            </p>
+
+        </div>
+
+    `;
+
+}
+
+
+// ======================================
+// LOAD CURRENT QUESTION
+// ======================================
 
 function loadQuestion() {
 
-    const q = questions[currentQuestion];
+    const q =
+        questions[currentQuestion];
 
-    document.getElementById("number").textContent =
+
+    currentElement.textContent =
         currentQuestion + 1;
 
-    document.getElementById("current").textContent =
+    numberElement.textContent =
         currentQuestion + 1;
 
-    document.getElementById("question").textContent =
-        q.question;
 
-    const optionsDiv = document.getElementById("options");
+    questionElement.textContent =
+        q.question || "Question";
 
-    optionsDiv.innerHTML = "";
 
-    q.options.forEach((option, index) => {
+    optionsElement.innerHTML = "";
 
-        const label = document.createElement("label");
 
-        label.className = "option";
+    const options =
+        Array.isArray(q.options)
+        ? q.options
+        : [];
 
-        label.innerHTML = `
-            <input
-                type="radio"
-                name="answer"
-                value="${index}"
-                ${userAnswers[currentQuestion] === index ? "checked" : ""}
-            >
-            ${String.fromCharCode(65 + index)}. ${option}
-        `;
 
-        optionsDiv.appendChild(label);
+    options.forEach(
+        (option, index) => {
 
-    });
+            const label =
+                document.createElement("label");
 
-    document.getElementById("nextBtn").style.display =
-        currentQuestion === questions.length - 1
-        ? "none"
-        : "block";
+            label.className =
+                "option";
 
-    document.getElementById("submitBtn").style.display =
-        currentQuestion === questions.length - 1
-        ? "block"
-        : "none";
+
+            label.innerHTML = `
+
+                <input
+                    type="radio"
+                    name="answer"
+                    value="${index}"
+                    ${userAnswers[currentQuestion] === index
+                    ? "checked"
+                    : ""}
+                >
+
+                ${String.fromCharCode(65 + index)}.
+                ${option}
+
+            `;
+
+
+            optionsElement.appendChild(
+                label
+            );
+
+        }
+    );
+
+
+    previousBtn.disabled =
+        currentQuestion === 0;
+
+
+    if (
+        currentQuestion ===
+        questions.length - 1
+    ) {
+
+        nextBtn.style.display =
+            "none";
+
+        submitBtn.style.display =
+            "block";
+
+    }
+
+    else {
+
+        nextBtn.style.display =
+            "block";
+
+        submitBtn.style.display =
+            "none";
+
+    }
+
 }
 
+
+// ======================================
+// SAVE ANSWER
+// ======================================
 
 function saveAnswer() {
 
-    const selected = document.querySelector(
-        'input[name="answer"]:checked'
-    );
+    const selected =
+        document.querySelector(
+            'input[name="answer"]:checked'
+        );
+
 
     if (selected) {
+
         userAnswers[currentQuestion] =
             Number(selected.value);
+
     }
+
 }
 
 
-function nextQuestion() {
+// ======================================
+// NEXT QUESTION
+// ======================================
 
-    saveAnswer();
+nextBtn.addEventListener(
+    "click",
+    function() {
 
-    if (currentQuestion < questions.length - 1) {
-
-        currentQuestion++;
-
-        loadQuestion();
-
-    }
-}
+        saveAnswer();
 
 
-function previousQuestion() {
+        if (
+            currentQuestion <
+            questions.length - 1
+        ) {
 
-    saveAnswer();
+            currentQuestion++;
 
-    if (currentQuestion > 0) {
+            loadQuestion();
 
-        currentQuestion--;
-
-        loadQuestion();
+        }
 
     }
-}
+);
 
+
+// ======================================
+// PREVIOUS QUESTION
+// ======================================
+
+previousBtn.addEventListener(
+    "click",
+    function() {
+
+        saveAnswer();
+
+
+        if (currentQuestion > 0) {
+
+            currentQuestion--;
+
+            loadQuestion();
+
+        }
+
+    }
+);
+
+
+// ======================================
+// SUBMIT QUIZ
+// ======================================
 
 function submitQuiz() {
 
     saveAnswer();
 
+
     let score = 0;
 
-    questions.forEach((question, index) => {
 
-        if (userAnswers[index] === question.answer) {
-            score++;
+    questions.forEach(
+        (question, index) => {
+
+            if (
+                userAnswers[index] ===
+                question.answer
+            ) {
+
+                score++;
+
+            }
+
         }
+    );
 
-    });
 
-    localStorage.setItem("quizScore", score);
-    localStorage.setItem("totalQuestions", questions.length);
+    localStorage.setItem(
+        "quizScore",
+        score
+    );
 
-    window.location.href = "result.html";
+
+    localStorage.setItem(
+        "totalQuestions",
+        questions.length
+    );
+
+
+    localStorage.setItem(
+        "quizTitle",
+        quiz.title || "Quiz"
+    );
+
+
+    window.location.href =
+        "result.html";
+
 }
 
 
+submitBtn.addEventListener(
+    "click",
+    submitQuiz
+);
+
+
+// ======================================
 // TIMER
+// ======================================
 
-let time = 20 * 60;
+function startTimer() {
 
-const timer = setInterval(() => {
-
-    let minutes = Math.floor(time / 60);
-    let seconds = time % 60;
-
-    document.getElementById("timer").textContent =
-        `${minutes}:${seconds.toString().padStart(2, "0")}`;
-
-    if (time <= 0) {
-
-        clearInterval(timer);
-
-        submitQuiz();
-
-    }
-
-    time--;
-
-}, 1000);
+    updateTimer();
 
 
-loadQuestion(// ==============================
-// BASIC ANTI-CHEAT SYSTEM
-// ==============================
+    timer = setInterval(
+        function() {
+
+            time--;
+
+
+            updateTimer();
+
+
+            if (time <= 0) {
+
+                clearInterval(timer);
+
+                submitQuiz();
+
+            }
+
+        },
+        1000
+    );
+
+}
+
+
+function updateTimer() {
+
+    const minutes =
+        Math.floor(time / 60);
+
+    const seconds =
+        time % 60;
+
+
+    timerElement.textContent =
+
+        `${minutes}:${seconds
+        .toString()
+        .padStart(2, "0")}`;
+
+}
+
+
+// ======================================
+// BASIC ANTI-CHEAT
+// ======================================
 
 let violations = 0;
+
 const MAX_VIOLATIONS = 3;
 
 let lastViolationTime = 0;
+
 
 function recordViolation(reason) {
 
     const now = Date.now();
 
-    // Prevent one action from being counted twice
-    if (now - lastViolationTime < 2000) {
+
+    if (
+        now - lastViolationTime <
+        2000
+    ) {
+
         return;
+
     }
+
 
     lastViolationTime = now;
 
     violations++;
 
+
     alert(
+
         "⚠️ WARNING\n\n" +
+
         reason +
+
         "\n\nViolation " +
+
         violations +
+
         " of " +
+
         MAX_VIOLATIONS
+
     );
 
-    if (violations >= MAX_VIOLATIONS) {
+
+    if (
+        violations >=
+        MAX_VIOLATIONS
+    ) {
 
         alert(
-            "Quiz automatically submitted because the maximum number of violations was reached."
+            "Quiz automatically submitted."
         );
 
+
         submitQuiz();
+
     }
+
 }
 
 
-// Detect leaving the quiz tab
-document.addEventListener("visibilitychange", function() {
+// Tab switching
+document.addEventListener(
+    "visibilitychange",
+    function() {
 
-    if (document.hidden) {
+        if (document.hidden) {
+
+            recordViolation(
+                "You left the quiz page or switched to another tab."
+            );
+
+        }
+
+    }
+);
+
+
+// Browser focus
+window.addEventListener(
+    "blur",
+    function() {
 
         recordViolation(
-            "You left the quiz page or switched to another tab."
+            "The quiz window lost focus."
         );
+
     }
-
-});
-
-
-// Detect losing browser focus
-window.addEventListener("blur", function() {
-
-    recordViolation(
-        "The quiz window lost focus."
-    );
-
-});
+);
 
 
-// Prevent browser back navigation
-history.pushState(null, "", location.href);
-
-window.addEventListener("popstate", function() {
-
-    history.pushState(null, "", location.href);
-
-    recordViolation(
-        "Attempt to leave the quiz was detected."
-    );
-
-});
+// Browser back button
+history.pushState(
+    null,
+    "",
+    location.href
+);
 
 
-// Warn before refreshing or closing
-window.addEventListener("beforeunload", function(event) {
+window.addEventListener(
+    "popstate",
+    function() {
 
-    event.preventDefault();
-    event.returnValue = "";
+        history.pushState(
+            null,
+            "",
+            location.href
+        );
 
-}););
+
+        recordViolation(
+            "Attempt to leave the quiz was detected."
+        );
+
+    }
+);
+
+
+// Refresh/close warning
+window.addEventListener(
+    "beforeunload",
+    function(event) {
+
+        event.preventDefault();
+
+        event.returnValue = "";
+
+    }
+);
+
+
+// ======================================
+// START
+// ======================================
+
+loadQuiz();
 
 </script>
 

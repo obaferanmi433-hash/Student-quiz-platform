@@ -150,22 +150,41 @@
     </div>
 
     <script>
-        document.getElementById("registerForm").addEventListener("submit", function(event) {
+        <script>
+document.getElementById("registerForm").addEventListener("submit", function(event) {
 
-            event.preventDefault();
+    event.preventDefault();
 
-            const name = document.getElementById("name").value;
-            const email = document.getElementById("email").value;
-            const password = document.getElementById("password").value;
-            const confirmPassword = document.getElementById("confirmPassword").value;
+    const name = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim().toLowerCase();
+    const password = document.getElementById("password").value;
+    const confirmPassword = document.getElementById("confirmPassword").value;
 
-            if (password !== confirmPassword) {
-                alert("Passwords do not match.");
-                return;
-            }
+    if (password !== confirmPassword) {
+        alert("Passwords do not match.");
+        return;
+    }
 
-            alert("Registration page is working! Real account storage will be connected later.");
-        });
+    const existingUser = JSON.parse(localStorage.getItem("quizUser"));
+
+    if (existingUser && existingUser.email === email) {
+        alert("An account with this email already exists.");
+        return;
+    }
+
+    const user = {
+        name: name,
+        email: email,
+        password: password
+    };
+
+    localStorage.setItem("quizUser", JSON.stringify(user));
+
+    alert("Account created successfully!");
+
+    window.location.href = "login.html";
+});
+</script>
     </script>
 
 </body>

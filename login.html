@@ -138,29 +138,49 @@
     </div>
 
     <script>
-document.getElementById("loginForm").addEventListener("submit", function(event) {
+<script type="module">
+import { auth } from "./firebase.js";
+
+import {
+    signInWithEmailAndPassword
+} from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+
+document.getElementById("loginForm").addEventListener("submit", async function(event) {
 
     event.preventDefault();
 
-    const email = document.getElementById("email").value.trim().toLowerCase();
+    const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
 
-    const savedUser = JSON.parse(localStorage.getItem("quizUser"));
+    try {
 
-    if (!savedUser) {
-        alert("No account found. Please register first.");
-        return;
+        await signInWithEmailAndPassword(
+            auth,
+            email,
+            password
+        );
+
+        alert("Login successful!");
+
+        window.location.href = "dashboard.html";
+
+    } catch (error) {
+
+        if (
+            error.code === "auth/invalid-credential" ||
+            error.code === "auth/wrong-password" ||
+            error.code === "auth/user-not-found"
+        ) {
+            alert("Incorrect email or password.");
+        } else if (error.code === "auth/invalid-email") {
+            alert("Please enter a valid email address.");
+        } else {
+            alert("Login failed. Please try again.");
+            console.error(error);
+        }
+
     }
 
-    if (email !== savedUser.email || password !== savedUser.password) {
-        alert("Incorrect email or password.");
-        return;
-    }
-
-    localStorage.setItem("loggedIn", "true");
-
-    alert("Login successful!");
-
-    window.location.href = "dashboard.html";
 });
+</script>
     </script>

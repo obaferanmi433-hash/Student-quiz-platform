@@ -138,19 +138,29 @@
     </div>
 
     <script>
-        document.getElementById("loginForm").addEventListener("submit", function(event) {
+document.getElementById("loginForm").addEventListener("submit", function(event) {
 
-            event.preventDefault();
+    event.preventDefault();
 
-            const email = document.getElementById("email").value;
-            const password = document.getElementById("password").value;
+    const email = document.getElementById("email").value.trim().toLowerCase();
+    const password = document.getElementById("password").value;
 
-            if (email && password) {
-                alert("Login page is working! Authentication will be connected later.");
-            }
+    const savedUser = JSON.parse(localStorage.getItem("quizUser"));
 
-        });
+    if (!savedUser) {
+        alert("No account found. Please register first.");
+        return;
+    }
+
+    if (email !== savedUser.email || password !== savedUser.password) {
+        alert("Incorrect email or password.");
+        return;
+    }
+
+    localStorage.setItem("loggedIn", "true");
+
+    alert("Login successful!");
+
+    window.location.href = "dashboard.html";
+});
     </script>
-
-</body>
-</html>

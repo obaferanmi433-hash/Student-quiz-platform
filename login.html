@@ -138,18 +138,24 @@
     </div>
 
 <script type="module">
+
 import { auth } from "./firebase.js";
 
 import {
     signInWithEmailAndPassword
 } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
 
-document.getElementById("loginForm").addEventListener("submit", async function(event) {
+
+const loginForm = document.getElementById("loginForm");
+
+
+loginForm.addEventListener("submit", async function(event) {
 
     event.preventDefault();
 
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
+
 
     try {
 
@@ -163,22 +169,20 @@ document.getElementById("loginForm").addEventListener("submit", async function(e
 
         window.location.href = "dashboard.html";
 
+
     } catch (error) {
 
-        if (
-            error.code === "auth/invalid-credential" ||
-            error.code === "auth/wrong-password" ||
-            error.code === "auth/user-not-found"
-        ) {
-            alert("Incorrect email or password.");
-        } else if (error.code === "auth/invalid-email") {
-            alert("Please enter a valid email address.");
-        } else {
-            alert("Login failed. Please try again.");
-            console.error(error);
-        }
+        console.error("LOGIN ERROR:", error);
+
+        alert(
+            "Login error:\n\n" +
+            error.code +
+            "\n\n" +
+            error.message
+        );
 
     }
 
 });
-    </script>
+
+</script>

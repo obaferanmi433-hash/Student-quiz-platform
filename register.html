@@ -162,12 +162,20 @@
 </div>
 
 <script>
-document.getElementById("registerForm").addEventListener("submit", function(event) {
+<script type="module">
+import { auth } from "./firebase.js";
+
+import {
+    createUserWithEmailAndPassword,
+    updateProfile
+} from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+
+document.getElementById("registerForm").addEventListener("submit", async function(event) {
 
     event.preventDefault();
 
     const name = document.getElementById("name").value.trim();
-    const email = document.getElementById("email").value.trim().toLowerCase();
+    const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
     const confirmPassword = document.getElementById("confirmPassword").value;
 
@@ -176,18 +184,39 @@ document.getElementById("registerForm").addEventListener("submit", function(even
         return;
     }
 
-    const user = {
-        name: name,
-        email: email,
-        password: password
-    };
+    try {
 
-    localStorage.setItem("quizUser", JSON.stringify(user));
+        const userCredential = await createUserWithEmailAndPassword(
+            auth,
+            email,
+            password
+        );
 
-    alert("Account created successfully!");
+        await updateProfile(userCredential.user, {
+            displayName: name
+        });
 
-    window.location.href = "login.html";
+        alert("Account created successfully!");
+
+        window.location.href = "login.html";
+
+    } catch (error) {
+
+        if (error.code === "auth/email-already-in-use") {
+            alert("This email is already registered.");
+        } else if (error.code === "auth/weak-password") {
+            alert("Password should be at least 6 characters.");
+        } else if (error.code === "auth/invalid-email") {
+            alert("Please enter a valid email address.");
+        } else {
+            alert("Registration failed. Please try again.");
+            console.error(error);
+        }
+
+    }
+
 });
+</script>
 </script>
 
 </body>

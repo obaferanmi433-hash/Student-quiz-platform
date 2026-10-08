@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebas
 import { getAuth } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCGB35tyDPYHkrbzB76CvQB2BE0GpAR3w8",
+  apiKey: "YOUR_API_KEY",
   authDomain: "quizhub-4c410.firebaseapp.com",
   projectId: "quizhub-4c410",
   storageBucket: "quizhub-4c410.firebasestorage.app",

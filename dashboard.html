@@ -129,61 +129,111 @@
                 Available Quizzes
             </h2>
 
-            <div class="quiz-grid">
+            <div class="quiz-grid" id="quizGrid">
 
-                <div class="quiz-card">
+    <div class="empty">
+        Loading quizzes...
+    </div>
 
-                    <h3>Mathematics Quiz</h3>
-
-                    <p>
-                        20 questions • 20 minutes
-                    </p>
-
-                    <a href="quiz.html" class="start-btn">
-                        Start Quiz
-                    </a>
-
-                </div>
-
-                <div class="quiz-card">
-
-                    <h3>Chemistry Quiz</h3>
-
-                    <p>
-                        20 questions • 20 minutes
-                    </p>
-
-                    <a href="quiz.html" class="start-btn">
-                        Start Quiz
-                    </a>
-
-                </div>
-
-                <div class="quiz-card">
-
-                    <h3>Biology Quiz</h3>
-
-                    <p>
-                        20 questions • 20 minutes
-                    </p>
-
-                    <a href="quiz.html" class="start-btn">
-                        Start Quiz
-                    </a>
-
-                </div>
-
-            </div>
+</div>
 
         </section>
 
     </main>
 
-    <script>
-        function logout() {
-            window.location.href = "login.html";
+    <script type="module">
+
+import { auth, db } from "./firebase.js";
+
+import {
+    collection,
+    getDocs
+} from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+
+import {
+    signOut
+} from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+
+
+const quizGrid = document.getElementById("quizGrid");
+
+
+async function loadQuizzes() {
+
+    try {
+
+        const quizSnapshot = await getDocs(
+            collection(db, "quizzes")
+        );
+
+        quizGrid.innerHTML = "";
+
+        if (quizSnapshot.empty) {
+
+            quizGrid.innerHTML = `
+                <div class="empty">
+                    <h3>No quizzes available yet.</h3>
+                    <p>Check back later for new quizzes.</p>
+                </div>
+            `;
+
+            return;
         }
-    </script>
+
+
+        quizSnapshot.forEach((quizDocument) => {
+
+            const quiz = quizDocument.data();
+
+            const card = document.createElement("div");
+
+            card.className = "quiz-card";
+
+            card.innerHTML = `
+                <h3>${quiz.title || "Untitled Quiz"}</h3>
+
+                <p>
+                    Available quiz
+                </p>
+
+                <a href="quiz.html?id=${quizDocument.id}"
+                   class="start-btn">
+                    Start Quiz
+                </a>
+            `;
+
+            quizGrid.appendChild(card);
+
+        });
+
+    } catch (error) {
+
+        console.error("Error loading quizzes:", error);
+
+        quizGrid.innerHTML = `
+            <div class="empty">
+                <h3>Unable to load quizzes.</h3>
+                <p>Please try again later.</p>
+            </div>
+        `;
+
+    }
+
+}
+
+
+window.logout = async function () {
+
+    await signOut(auth);
+
+    window.location.href = "login.html";
+
+};
+
+
+loadQuizzes();
+
+</script>
 
 </body>
 </html>
